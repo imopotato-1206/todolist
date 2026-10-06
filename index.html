@@ -1,0 +1,1985 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>やることリスト & スケジュール管理</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- html2canvas for Exporting Images -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Cropper.js for Image Crop Feature -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kosugi+Maru&family=M+PLUS+Rounded+1c:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Serif+JP:wght@400;700&display=swap');
+
+        /* Font family classes */
+        .font-sans-jp { font-family: 'Noto Sans JP', sans-serif; }
+        .font-serif-jp { font-family: 'Noto Serif JP', serif; }
+        .font-maru { font-family: 'Kosugi Maru', 'M PLUS Rounded 1c', sans-serif; }
+        .font-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+
+        /* Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 9999px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        body.theme-dark .custom-scrollbar::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+        body.theme-dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #4b5563;
+        }
+        body.theme-dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #6b7280;
+        }
+
+        /* Input High Contrast styling */
+        input[type="text"], 
+        input[type="number"], 
+        input[type="datetime-local"], 
+        input[type="time"], 
+        textarea, 
+        select {
+            color: #1f2937;
+            background-color: #ffffff;
+        }
+
+        /* Translucent styling for Light Theme */
+        .bg-white {
+            background-color: rgba(255, 255, 255, 0.85) !important;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        .bg-gray-50 {
+            background-color: rgba(249, 250, 251, 0.9) !important;
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+        }
+
+        .border-gray-200 {
+            border-color: rgba(229, 231, 235, 0.8) !important;
+        }
+        .border-gray-300 {
+            border-color: rgba(209, 213, 219, 0.8) !important;
+        }
+
+        #mainNav {
+            background-color: rgba(255, 255, 255, 1.0) !important;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .main-nav-btn.nav-active-other {
+            color: #ea580c !important;
+            border-color: #f97316 !important;
+            background-color: rgba(249, 115, 22, 0.1) !important;
+        }
+
+        /* Header frame with exact 4:1 aspect ratio */
+        .header-crop-frame {
+            aspect-ratio: 4 / 1;
+            width: 100%;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        /* Dark Theme Overrides */
+        body.theme-dark {
+            background-color: #111827 !important;
+            color: #f3f4f6 !important;
+        }
+
+        body.theme-dark .bg-white {
+            background-color: rgba(31, 41, 55, 0.85) !important;
+            color: #f9fafb !important;
+            border-color: rgba(55, 65, 81, 0.8) !important;
+        }
+
+        body.theme-dark .bg-gray-50 {
+            background-color: rgba(55, 65, 81, 0.9) !important;
+            color: #f9fafb !important;
+        }
+
+        body.theme-dark input[type="text"], 
+        body.theme-dark input[type="number"], 
+        body.theme-dark input[type="datetime-local"], 
+        body.theme-dark input[type="time"], 
+        body.theme-dark textarea, 
+        body.theme-dark select {
+            color: #ffffff !important;
+            background-color: rgba(55, 65, 81, 0.9) !important;
+            border-color: rgba(75, 85, 99, 0.8) !important;
+        }
+
+        body.theme-dark .text-gray-800,
+        body.theme-dark .text-gray-700,
+        body.theme-dark .text-gray-600 {
+            color: #f3f4f6 !important;
+        }
+
+        body.theme-dark #mainNav {
+            background-color: rgba(31, 41, 55, 1.0) !important;
+            border-color: rgba(55, 65, 81, 1.0) !important;
+        }
+
+        /* Draggable tabs */
+        .tab-draggable {
+            cursor: grab;
+            user-select: none;
+            touch-action: pan-x;
+        }
+        .tab-draggable:active {
+            cursor: grabbing;
+        }
+        .tab-dragging {
+            opacity: 0.4;
+            transform: scale(0.95);
+        }
+
+        .crop-container {
+            max-height: 50vh;
+            background-color: #111827;
+        }
+    </style>
+</head>
+<body id="appBody" class="font-sans-jp bg-gray-100 text-gray-800 min-h-screen flex flex-col transition-colors duration-300">
+
+    <!-- Header Section -->
+    <header class="relative w-full shadow-md bg-slate-800 text-white overflow-hidden">
+        <div id="headerBgContainer" class="relative header-crop-frame flex flex-col justify-end p-4 md:p-6 transition-all duration-300" style="background-image: url('https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?auto=format&fit=crop&w=1200&q=80');">
+            <div class="absolute inset-0 bg-black/40 backdrop-blur-[1px] flex flex-col justify-end p-4 md:p-6">
+                <div class="flex justify-between items-end max-w-6xl w-full mx-auto">
+                    <div>
+                        <h1 class="text-2xl md:text-4xl font-bold tracking-wide drop-shadow-md flex items-center gap-2">
+                            <i class="fa-solid fa-calendar-check text-orange-400"></i> Task & Schedule
+                        </h1>
+                        <p class="text-xs md:text-sm text-gray-200 mt-1 drop-shadow">日々のタスクとスケジュールを一元管理</p>
+                    </div>
+
+                    <!-- Display Mode Switcher -->
+                    <div class="bg-white/20 backdrop-blur-md rounded-lg p-1 flex items-center border border-white/30 text-xs">
+                        <span class="mr-2 pl-2 text-gray-200 hidden sm:inline"><i class="fa-solid fa-desktop"></i> 表示モード:</span>
+                        <button id="btnViewAuto" onclick="setViewMode('auto')" class="px-2 py-1 rounded transition text-white font-medium bg-white/30">自動</button>
+                        <button id="btnViewPC" onclick="setViewMode('pc')" class="px-2 py-1 rounded transition text-white font-medium hover:bg-white/20">PC版</button>
+                        <button id="btnViewSP" onclick="setViewMode('sp')" class="px-2 py-1 rounded transition text-white font-medium hover:bg-white/20">スマホ版</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Navigation Tabs -->
+        <nav id="mainNav" class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-30 transition-colors">
+            <div class="max-w-6xl mx-auto flex overflow-x-auto custom-scrollbar px-2">
+                <button onclick="switchMainTab('todo')" id="navTab-todo" class="main-nav-btn nav-active-todo flex-1 min-w-[90px] py-3 px-2 text-center border-b-2 font-medium text-sm sm:text-base flex items-center justify-center gap-2 transition-all border-lime-500 text-lime-600 bg-lime-50/50">
+                    <i class="fa-solid fa-list-check"></i> <span>リスト作成</span>
+                </button>
+                <button onclick="switchMainTab('schedule')" id="navTab-schedule" class="main-nav-btn flex-1 min-w-[90px] py-3 px-2 text-center border-b-2 border-transparent font-medium text-sm sm:text-base text-gray-600 hover:text-gray-900 flex items-center justify-center gap-2 transition-all">
+                    <i class="fa-regular fa-calendar-days"></i> <span>スケジュール</span>
+                </button>
+                <button onclick="switchMainTab('history')" id="navTab-history" class="main-nav-btn flex-1 min-w-[90px] py-3 px-2 text-center border-b-2 border-transparent font-medium text-sm sm:text-base text-gray-600 hover:text-gray-900 flex items-center justify-center gap-2 transition-all">
+                    <i class="fa-solid fa-clock-rotate-left"></i> <span>履歴</span>
+                </button>
+                <button onclick="switchMainTab('usage')" id="navTab-usage" class="main-nav-btn flex-1 min-w-[90px] py-3 px-2 text-center border-b-2 border-transparent font-medium text-sm sm:text-base text-gray-600 hover:text-gray-900 flex items-center justify-center gap-2 transition-all">
+                    <i class="fa-solid fa-circle-question"></i> <span>使い方</span>
+                </button>
+                <button onclick="switchMainTab('settings')" id="navTab-settings" class="main-nav-btn flex-1 min-w-[90px] py-3 px-2 text-center border-b-2 border-transparent font-medium text-sm sm:text-base text-gray-600 hover:text-gray-900 flex items-center justify-center gap-2 transition-all">
+                    <i class="fa-solid fa-gear"></i> <span>設定</span>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content Container -->
+    <main id="appContainer" class="flex-1 max-w-6xl w-full mx-auto p-3 sm:p-6 transition-all">
+
+        <!-- ==================== 1. リスト作成 画面 ==================== -->
+        <section id="sec-todo" class="space-y-4">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-3 rounded-xl shadow-sm border border-gray-200">
+                <div class="flex items-center gap-2 overflow-x-auto w-full sm:w-auto custom-scrollbar py-1 pb-2" id="todoTabsList"></div>
+                
+                <div class="flex items-center gap-2 w-full sm:w-auto justify-end border-t sm:border-t-0 pt-2 sm:pt-0">
+                    <button onclick="addNewTodoList()" class="px-3 py-1.5 bg-lime-500 hover:bg-lime-600 text-white rounded-lg font-medium text-sm shadow-sm flex items-center gap-1.5 transition active:scale-95 whitespace-nowrap">
+                        <i class="fa-solid fa-plus"></i> リスト追加
+                    </button>
+                    <button onclick="saveCurrentToHistory('todo')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium text-sm shadow-sm flex items-center gap-1.5 transition active:scale-95 whitespace-nowrap">
+                        <i class="fa-solid fa-bookmark"></i> 履歴として保存
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 space-y-4">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-gray-100 pb-4">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-folder-open text-lime-500 text-xl"></i>
+                        <input type="text" id="todoListNameInput" onfocus="this.select()" onchange="updateCurrentListName(this.value)" class="text-xl font-bold text-gray-800 bg-white border border-gray-300 focus:border-lime-500 focus:outline-none px-2 py-1 rounded transition w-full max-w-md" placeholder="リスト名を入力">
+                    </div>
+
+                    <div class="flex items-center gap-2 text-sm text-gray-600 self-end md:self-auto">
+                        <label for="todoSortSelect" class="whitespace-nowrap"><i class="fa-solid fa-sort"></i> 並び替え:</label>
+                        <select id="todoSortSelect" onchange="changeTodoSort(this.value)" class="border border-gray-300 rounded-lg px-2.5 py-1.5 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-lime-400 text-sm font-medium">
+                            <option value="manual">手動</option>
+                            <option value="priority-asc">優先順位：小さい順</option>
+                            <option value="priority-desc">優先順位：大きい順</option>
+                            <option value="deadline-asc">期限：早い順</option>
+                            <option value="deadline-desc">期限：遅い順</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="todoItemsContainer" class="space-y-3"></div>
+
+                <div class="pt-2">
+                    <button onclick="addTodoItem()" class="w-full py-2.5 border-2 border-dashed border-lime-300 text-lime-600 hover:bg-lime-50/60 rounded-xl font-medium transition flex items-center justify-center gap-2 active:scale-[0.99]">
+                        <i class="fa-solid fa-circle-plus text-lg"></i> ＋ やることを追加
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== 2. スケジュール作成 画面 ==================== -->
+        <section id="sec-schedule" class="space-y-4 hidden">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-3 rounded-xl shadow-sm border border-gray-200">
+                <div class="flex items-center gap-2 overflow-x-auto w-full sm:w-auto custom-scrollbar py-1 pb-2" id="scheduleTabsList"></div>
+                
+                <div class="flex items-center gap-2 w-full sm:w-auto justify-end border-t sm:border-t-0 pt-2 sm:pt-0">
+                    <button onclick="addNewSchedule()" class="px-3 py-1.5 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-medium text-sm shadow-sm flex items-center gap-1.5 transition active:scale-95 whitespace-nowrap">
+                        <i class="fa-solid fa-plus"></i> スケジュール追加
+                    </button>
+                    <button onclick="saveCurrentToHistory('schedule')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium text-sm shadow-sm flex items-center gap-1.5 transition active:scale-95 whitespace-nowrap">
+                        <i class="fa-solid fa-bookmark"></i> 履歴として保存
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-4">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-regular fa-calendar-check text-purple-500 text-xl"></i>
+                        <input type="text" id="schedNameInput" onfocus="this.select()" onchange="updateCurrentSchedName(this.value)" class="text-xl font-bold bg-white text-gray-800 border border-gray-300 focus:border-purple-500 focus:outline-none px-2 py-1 rounded transition w-full max-w-xs" placeholder="スケジュール名">
+                    </div>
+
+                    <div class="flex items-center gap-2 bg-purple-50/70 p-2 rounded-lg border border-purple-100 text-sm font-medium">
+                        <i class="fa-regular fa-calendar text-purple-600"></i>
+                        <input type="number" id="schedMonthInput" min="1" max="12" onfocus="this.select()" onchange="updateSchedDate()" class="w-12 text-center border border-gray-300 rounded px-1 py-0.5 bg-white text-gray-800 font-bold"> 月
+                        <input type="number" id="schedDayInput" min="1" max="31" onfocus="this.select()" onchange="updateSchedDate()" class="w-12 text-center border border-gray-300 rounded px-1 py-0.5 bg-white text-gray-800 font-bold"> 日 のスケジュール
+                    </div>
+                </div>
+
+                <div id="schedItemsContainer" class="space-y-3"></div>
+
+                <div class="pt-2">
+                    <button onclick="addScheduleItem()" class="w-full py-2.5 border-2 border-dashed border-purple-300 text-purple-600 hover:bg-purple-50/60 rounded-xl font-medium transition flex items-center justify-center gap-2 active:scale-[0.99]">
+                        <i class="fa-solid fa-circle-plus text-lg"></i> ＋ 予定を追加
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== 3. 履歴 画面 ==================== -->
+        <section id="sec-history" class="space-y-4 hidden">
+            <div class="flex justify-between items-center bg-white p-2 rounded-xl shadow-sm border border-gray-200">
+                <div class="flex gap-2">
+                    <button id="histSubTab-todo" onclick="switchHistorySubTab('todo')" class="px-4 py-2 rounded-lg font-medium text-sm transition bg-lime-500 text-white shadow-sm">
+                        <i class="fa-solid fa-list-check mr-1"></i> やることリスト履歴
+                    </button>
+                    <button id="histSubTab-schedule" onclick="switchHistorySubTab('schedule')" class="px-4 py-2 rounded-lg font-medium text-sm transition bg-gray-100 text-gray-700 hover:bg-gray-200">
+                        <i class="fa-regular fa-calendar-days mr-1"></i> スケジュール履歴
+                    </button>
+                </div>
+
+                <button onclick="confirmClearAllHistory()" class="px-3 py-1.5 text-red-600 hover:bg-red-50 rounded-lg text-sm font-medium border border-red-200 transition">
+                    <i class="fa-solid fa-trash-can mr-1"></i> 全履歴を削除
+                </button>
+            </div>
+
+            <div id="historyItemsList" class="space-y-4"></div>
+        </section>
+
+        <!-- ==================== 4. 使い方 画面 ==================== -->
+        <section id="sec-usage" class="space-y-6 hidden">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h2 class="text-xl font-bold text-gray-800 border-b border-gray-200 pb-3 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-book-open text-orange-500"></i> アプリの使い方ガイド
+                </h2>
+
+                <ol class="space-y-4">
+                    <li class="flex gap-4 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                        <span class="flex-shrink-0 w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center font-bold text-sm">1</span>
+                        <div>
+                            <h3 class="font-bold text-gray-800">リスト・スケジュールを作成する</h3>
+                            <p class="text-sm text-gray-600 mt-0.5">「リスト作成」または「スケジュール」タブで、上部の「＋」ボタンを押すと新しいタブを追加できます。タブをクリック・ダブルクリックするとすぐに名前を入力・上書きできます。</p>
+                        </div>
+                    </li>
+                    <li class="flex gap-4 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                        <span class="flex-shrink-0 w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center font-bold text-sm">2</span>
+                        <div>
+                            <h3 class="font-bold text-gray-800">文字の上書き入力</h3>
+                            <p class="text-sm text-gray-600 mt-0.5">「リスト１」や「新しいタスク」などの各入力欄をクリックするとテキストが全選択されるため、そのまま打ち込んで簡単に上書きできます。</p>
+                        </div>
+                    </li>
+                    <li class="flex gap-4 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                        <span class="flex-shrink-0 w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center font-bold text-sm">3</span>
+                        <div>
+                            <h3 class="font-bold text-gray-800">履歴画面での詳細確認と完了管理</h3>
+                            <p class="text-sm text-gray-600 mt-0.5">保存された履歴画面でも各タスクの詳細を確認でき、チェックボックスで完了状態を直接更新・管理できます。</p>
+                        </div>
+                    </li>
+                    <li class="flex gap-4 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                        <span class="flex-shrink-0 w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center font-bold text-sm">4</span>
+                        <div>
+                            <h3 class="font-bold text-gray-800">画像切り抜き調整（アスペクト比統一）</h3>
+                            <p class="text-sm text-gray-600 mt-0.5">ヘッダー画像は4:1の表示比率と一致した枠でぴったり切り抜けます。表示画面と切り抜き枠の形が統一されています。</p>
+                        </div>
+                    </li>
+                </ol>
+            </div>
+        </section>
+
+        <!-- ==================== 5. 設定 画面 ==================== -->
+        <section id="sec-settings" class="space-y-6 hidden">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-6">
+                <h2 class="text-xl font-bold text-gray-800 border-b border-gray-200 pb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-palette text-orange-500"></i> デザイン・環境設定
+                </h2>
+
+                <div class="space-y-2">
+                    <label class="block font-bold text-gray-700 text-sm">フォント設定</label>
+                    <select id="cfgFont" class="w-full max-w-xs border border-gray-300 rounded-lg p-2 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-400 font-medium">
+                        <option value="font-sans-jp">標準 (ゴシック体)</option>
+                        <option value="font-serif-jp">明朝体 (Noto Serif)</option>
+                        <option value="font-maru">丸ゴシック (Kosugi Maru)</option>
+                        <option value="font-mono">等幅 (Monospace)</option>
+                    </select>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="block font-bold text-gray-700 text-sm">テーマ設定</label>
+                    <div class="flex gap-4">
+                        <label class="flex items-center gap-2 cursor-pointer border p-3 rounded-xl hover:bg-gray-50 flex-1 max-w-xs">
+                            <input type="radio" name="cfgTheme" value="light" class="text-orange-500 focus:ring-orange-400">
+                            <div>
+                                <span class="font-medium text-sm block text-gray-800">ライトテーマ</span>
+                                <span class="text-xs text-gray-500">白基調 ＋ アクセントカラー</span>
+                            </div>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer border p-3 rounded-xl hover:bg-gray-50 flex-1 max-w-xs">
+                            <input type="radio" name="cfgTheme" value="dark" class="text-blue-500 focus:ring-blue-400">
+                            <div>
+                                <span class="font-medium text-sm block text-gray-800">ダークテーマ</span>
+                                <span class="text-xs text-gray-500">黒基調 ＋ アクセントカラー</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="border-t border-gray-100 pt-4 space-y-4">
+                    <h3 class="font-bold text-gray-800 text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-crop-simple text-orange-500"></i> 画像設定 (切り抜き調整)
+                    </h3>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="p-3 bg-gray-50/80 rounded-xl border border-gray-200 space-y-3">
+                            <label class="block text-xs font-bold text-gray-700">ヘッダー画像 (4:1 横長バナー)</label>
+                            <div class="flex items-center gap-2">
+                                <input type="file" id="cfgHeaderImgFile" accept="image/*" class="text-xs text-gray-700 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-orange-500 file:text-white hover:file:bg-orange-600 cursor-pointer">
+                            </div>
+                            <div class="flex items-center justify-between pt-1">
+                                <button id="btnRecropHeader" onclick="recropExistingImage('header')" class="hidden text-xs text-orange-600 hover:text-orange-700 font-medium flex items-center gap-1">
+                                    <i class="fa-solid fa-crop"></i> 切り抜き直す
+                                </button>
+                                <button onclick="clearHeaderImg()" class="text-xs text-red-500 hover:underline">デフォルトに戻す</button>
+                            </div>
+                        </div>
+
+                        <div class="p-3 bg-gray-50/80 rounded-xl border border-gray-200 space-y-3">
+                            <label class="block text-xs font-bold text-gray-700">全体背景画像 (背景壁紙)</label>
+                            <div class="flex items-center gap-2">
+                                <input type="file" id="cfgBgImgFile" accept="image/*" class="text-xs text-gray-700 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-orange-500 file:text-white hover:file:bg-orange-600 cursor-pointer">
+                            </div>
+                            <div class="flex items-center justify-between pt-1">
+                                <button id="btnRecropBg" onclick="recropExistingImage('bg')" class="hidden text-xs text-orange-600 hover:text-orange-700 font-medium flex items-center gap-1">
+                                    <i class="fa-solid fa-crop"></i> 切り抜き直す
+                                </button>
+                                <button onclick="clearBgImg()" class="text-xs text-red-500 hover:underline">背景画像を削除</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border-t border-gray-100 pt-4 space-y-3">
+                    <h3 class="font-bold text-gray-800 text-sm">背景・カラーカスタム</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">背景色</label>
+                            <div class="flex items-center gap-3">
+                                <input type="color" id="cfgBgColor" class="w-10 h-10 rounded cursor-pointer border border-gray-300">
+                                <span class="text-xs text-gray-500">カラーパレットから選択</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border-t border-gray-100 pt-4 space-y-3">
+                    <h3 class="font-bold text-gray-800 text-sm">UI個別に色を設定</h3>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">文字色</label>
+                            <input type="color" id="cfgTextColor" class="w-full h-8 rounded cursor-pointer border border-gray-300">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">枠線色</label>
+                            <input type="color" id="cfgBorderColor" class="w-full h-8 rounded cursor-pointer border border-gray-300">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">ボタンアクセント</label>
+                            <input type="color" id="cfgBtnColor" class="w-full h-8 rounded cursor-pointer border border-gray-300">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">カード/タブ色</label>
+                            <input type="color" id="cfgTabColor" class="w-full h-8 rounded cursor-pointer border border-gray-300">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border-t border-gray-200 pt-6 flex flex-wrap gap-3 justify-end">
+                    <button onclick="previewSettings()" class="px-5 py-2.5 bg-gray-600 hover:bg-gray-700 text-white rounded-xl font-medium text-sm transition shadow-sm flex items-center gap-2">
+                        <i class="fa-solid fa-eye"></i> プレビューを表示
+                    </button>
+                    <button onclick="applyAndSaveSettings()" class="px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-medium text-sm transition shadow-md flex items-center gap-2 active:scale-95">
+                        <i class="fa-solid fa-check"></i> 設定を反映する
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Image Cropping Modal -->
+    <div id="cropModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-6 hidden">
+        <div class="bg-white rounded-2xl max-w-3xl w-full p-4 sm:p-6 shadow-2xl space-y-4 border border-gray-100 flex flex-col max-h-[90vh]">
+            <div class="flex justify-between items-center border-b pb-3 border-gray-200">
+                <h3 id="cropModalTitle" class="font-bold text-lg text-gray-800 flex items-center gap-2">
+                    <i class="fa-solid fa-crop text-orange-500"></i> 画像の切り抜き位置を指定
+                </h3>
+                <button onclick="closeCropModal()" class="text-gray-400 hover:text-gray-600 p-1 rounded-lg">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <p class="text-xs text-gray-500">アプリ画面での表示枠と同じ比率で正確に切り抜かれます。枠をドラッグまたは拡大縮小して範囲を指定してください。</p>
+
+            <div class="crop-container relative w-full overflow-hidden rounded-xl border border-gray-700 flex-1 min-h-[250px] flex items-center justify-center">
+                <img id="cropTargetImage" src="" alt="Crop Target" class="max-w-full">
+            </div>
+
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-gray-100">
+                <div class="flex items-center gap-1.5 bg-gray-100 p-1 rounded-lg text-xs">
+                    <span class="text-gray-500 px-1 font-medium">切り抜き枠:</span>
+                    <button id="btnAspectHeader" onclick="setCropRatio(4 / 1)" class="px-2 py-1 bg-white hover:bg-gray-200 text-gray-700 rounded shadow-xs font-medium">ヘッダー (4:1)</button>
+                    <button id="btnAspectBg" onclick="setCropRatio(16 / 9)" class="px-2 py-1 bg-white hover:bg-gray-200 text-gray-700 rounded shadow-xs font-medium">背景 (16:9)</button>
+                    <button onclick="setCropRatio(NaN)" class="px-2 py-1 bg-white hover:bg-gray-200 text-gray-700 rounded shadow-xs font-medium">自由</button>
+                </div>
+
+                <div class="flex items-center gap-1">
+                    <button onclick="rotateCropper(-90)" title="左90度回転" class="p-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs">
+                        <i class="fa-solid fa-rotate-left"></i>
+                    </button>
+                    <button onclick="rotateCropper(90)" title="右90度回転" class="p-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs">
+                        <i class="fa-solid fa-rotate-right"></i>
+                    </button>
+                    <button onclick="zoomCropper(0.1)" title="拡大" class="p-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs">
+                        <i class="fa-solid fa-magnifying-glass-plus"></i>
+                    </button>
+                    <button onclick="zoomCropper(-0.1)" title="縮小" class="p-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs">
+                        <i class="fa-solid fa-magnifying-glass-minus"></i>
+                    </button>
+                    <button onclick="resetCropper()" title="リセット" class="p-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs">
+                        <i class="fa-solid fa-arrow-rotate-left"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-2">
+                <button onclick="closeCropModal()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-medium transition">キャンセル</button>
+                <button onclick="applyCroppedImage()" class="px-5 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-sm font-medium transition shadow-md flex items-center gap-2">
+                    <i class="fa-solid fa-check"></i> この位置で切り抜いて決定
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Modal Dialog -->
+    <div id="customModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4 border border-gray-100 transform transition-all scale-100">
+            <div class="flex items-center gap-3 text-red-500">
+                <i class="fa-solid fa-triangle-exclamation text-2xl"></i>
+                <h3 id="modalTitle" class="font-bold text-lg text-gray-800">確認</h3>
+            </div>
+            <p id="modalMessage" class="text-sm text-gray-600">本当に実行しますか？</p>
+            <div class="flex justify-end gap-2 pt-2">
+                <button id="modalCancelBtn" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition">キャンセル</button>
+                <button id="modalConfirmBtn" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition shadow-sm">実行する</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Export Container -->
+    <div id="imageExportContainer" class="fixed left-[-9999px] top-[-9999px] bg-white p-8 rounded-xl shadow-none w-[600px] font-sans-jp space-y-4 border border-gray-200"></div>
+
+    <script>
+        const STORAGE_KEY = 'todo_sched_app_data_v3';
+
+        let appState = {
+            viewMode: 'auto',
+            activeMainTab: 'todo',
+            activeTodoListId: null,
+            todoLists: [],
+            activeScheduleId: null,
+            schedules: [],
+            historySubTab: 'todo',
+            history: {
+                todo: [],
+                schedule: []
+            },
+            settings: {
+                font: 'font-sans-jp',
+                theme: 'light',
+                bgColor: '#f3f4f6',
+                textColor: '#1f2937',
+                borderColor: '#e5e7eb',
+                btnColor: '#f97316',
+                tabColor: '#ffffff',
+                bgImg: '',
+                headerImg: '',
+                rawBgImg: '',
+                rawHeaderImg: ''
+            }
+        };
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        /* Cropper State & Logic */
+        let cropperInstance = null;
+        let activeCropTargetType = null;
+        let currentRawImageSrc = '';
+
+        function openCropModal(imgSrc, targetType) {
+            activeCropTargetType = targetType;
+            currentRawImageSrc = imgSrc;
+
+            const modal = document.getElementById('cropModal');
+            const targetImg = document.getElementById('cropTargetImage');
+            const title = document.getElementById('cropModalTitle');
+
+            if (targetType === 'header') {
+                title.innerHTML = `<i class="fa-solid fa-crop text-orange-500"></i> ヘッダー画像の切り抜き位置を指定 (4:1)`;
+            } else {
+                title.innerHTML = `<i class="fa-solid fa-crop text-orange-500"></i> 背景画像の切り抜き位置を指定 (16:9)`;
+            }
+
+            targetImg.src = imgSrc;
+            modal.classList.remove('hidden');
+
+            if (cropperInstance) {
+                cropperInstance.destroy();
+            }
+
+            const initialAspect = (targetType === 'header') ? (4 / 1) : (16 / 9);
+
+            cropperInstance = new Cropper(targetImg, {
+                aspectRatio: initialAspect,
+                viewMode: 1,
+                autoCropArea: 0.95,
+                responsive: true,
+                restore: false,
+                background: false
+            });
+        }
+
+        function setCropRatio(ratio) {
+            if (cropperInstance) {
+                cropperInstance.setAspectRatio(ratio);
+            }
+        }
+
+        function rotateCropper(degree) {
+            if (cropperInstance) cropperInstance.rotate(degree);
+        }
+
+        function zoomCropper(ratio) {
+            if (cropperInstance) cropperInstance.zoom(ratio);
+        }
+
+        function resetCropper() {
+            if (cropperInstance) cropperInstance.reset();
+        }
+
+        function closeCropModal() {
+            document.getElementById('cropModal').classList.add('hidden');
+            if (cropperInstance) {
+                cropperInstance.destroy();
+                cropperInstance = null;
+            }
+            document.getElementById('cfgHeaderImgFile').value = '';
+            document.getElementById('cfgBgImgFile').value = '';
+        }
+
+        function applyCroppedImage() {
+            if (!cropperInstance) return;
+
+            const canvas = cropperInstance.getCroppedCanvas({
+                maxWidth: 1920,
+                maxHeight: 1080,
+                imageSmoothingEnabled: true,
+                imageSmoothingQuality: 'high'
+            });
+
+            if (!canvas) return;
+
+            const croppedDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+
+            if (activeCropTargetType === 'header') {
+                appState.settings.headerImg = croppedDataUrl;
+                appState.settings.rawHeaderImg = currentRawImageSrc;
+            } else if (activeCropTargetType === 'bg') {
+                appState.settings.bgImg = croppedDataUrl;
+                appState.settings.rawBgImg = currentRawImageSrc;
+            }
+
+            saveState();
+            applyVisualStyles();
+            updateRecropButtonsVisibility();
+            closeCropModal();
+
+            showModal('通知', '画像の切り抜きを適用しました。', null, false);
+        }
+
+        function recropExistingImage(targetType) {
+            const rawSrc = (targetType === 'header') ? (appState.settings.rawHeaderImg || appState.settings.headerImg) : (appState.settings.rawBgImg || appState.settings.bgImg);
+            if (rawSrc) {
+                openCropModal(rawSrc, targetType);
+            } else {
+                showModal('情報', '元画像が見つかりません。新規ファイルをアップロードしてください。', null, false);
+            }
+        }
+
+        function updateRecropButtonsVisibility() {
+            const btnHeader = document.getElementById('btnRecropHeader');
+            const btnBg = document.getElementById('btnRecropBg');
+
+            if (btnHeader) {
+                if (appState.settings.headerImg) btnHeader.classList.remove('hidden');
+                else btnHeader.classList.add('hidden');
+            }
+
+            if (btnBg) {
+                if (appState.settings.bgImg) btnBg.classList.remove('hidden');
+                else btnBg.classList.add('hidden');
+            }
+        }
+
+        /* Tab Drag & Drop */
+        let draggedTabIndex = null;
+        let draggedTabType = null;
+
+        function handleTabDragStart(e, type, index) {
+            draggedTabIndex = index;
+            draggedTabType = type;
+            e.dataTransfer.effectAllowed = 'move';
+            e.currentTarget.classList.add('tab-dragging');
+        }
+
+        function handleTabDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        }
+
+        function handleTabDrop(e, type, targetIndex) {
+            e.preventDefault();
+            if (draggedTabType !== type || draggedTabIndex === null || draggedTabIndex === targetIndex) return;
+
+            const targetList = type === 'todo' ? appState.todoLists : appState.schedules;
+            const movedTab = targetList.splice(draggedTabIndex, 1)[0];
+            targetList.splice(targetIndex, 0, movedTab);
+
+            saveState();
+            if (type === 'todo') renderTodoSection();
+            else renderScheduleSection();
+        }
+
+        function handleTabDragEnd(e) {
+            draggedTabIndex = null;
+            draggedTabType = null;
+            e.currentTarget.classList.remove('tab-dragging');
+        }
+
+        /* Persistence */
+        function initData() {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (raw) {
+                try {
+                    const parsed = JSON.parse(raw);
+                    appState = Object.assign(appState, parsed);
+                } catch(err) {
+                    console.error('Failed to parse storage:', err);
+                }
+            }
+
+            if (!appState.todoLists || appState.todoLists.length === 0) {
+                const defaultList = createNewTodoListObject('リスト１');
+                appState.todoLists = [defaultList];
+                appState.activeTodoListId = defaultList.id;
+            } else if (!appState.activeTodoListId || !appState.todoLists.some(l => l.id === appState.activeTodoListId)) {
+                appState.activeTodoListId = appState.todoLists[0].id;
+            }
+
+            if (!appState.schedules || appState.schedules.length === 0) {
+                const defaultSched = createNewScheduleObject('リスト１');
+                appState.schedules = [defaultSched];
+                appState.activeScheduleId = defaultSched.id;
+            } else if (!appState.activeScheduleId || !appState.schedules.some(s => s.id === appState.activeScheduleId)) {
+                appState.activeScheduleId = appState.schedules[0].id;
+            }
+
+            saveState();
+        }
+
+        function saveState() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+        }
+
+        function generateNextTabName(listArray) {
+            let maxNum = 0;
+            const regex = /^リスト[１1-9\d]+$/;
+
+            listArray.forEach(item => {
+                const numStr = item.name.replace(/[^0-9]/g, '');
+                if (numStr) {
+                    const num = parseInt(numStr, 10);
+                    if (!isNaN(num) && num > maxNum) maxNum = num;
+                }
+            });
+
+            return `リスト${maxNum + 1}`;
+        }
+
+        function createNewTodoListObject(name) {
+            const now = new Date();
+            const defaultDeadline = new Date(now.getTime() + 86400000).toISOString().slice(0, 16);
+            return {
+                id: 'list_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+                name: name,
+                sortMode: 'manual',
+                items: [
+                    {
+                        id: 'item_' + Date.now(),
+                        priority: 1,
+                        text: '新しいタスク',
+                        detail: '',
+                        completed: false,
+                        deadlineType: 'datetime',
+                        deadlineDatetime: defaultDeadline,
+                        durationNum: 3,
+                        durationUnit: 'days',
+                        createdAt: Date.now(),
+                        expanded: false
+                    }
+                ]
+            };
+        }
+
+        function createNewScheduleObject(name) {
+            const now = new Date();
+            return {
+                id: 'sched_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+                name: name,
+                month: now.getMonth() + 1,
+                day: now.getDate(),
+                items: [
+                    {
+                        id: 'sitem_' + Date.now(),
+                        text: '予定の例',
+                        detail: '',
+                        startTime: '10:00',
+                        endTime: '12:00',
+                        completed: false,
+                        expanded: false
+                    }
+                ]
+            };
+        }
+
+        function isEffectiveMobileView() {
+            if (appState.viewMode === 'sp') return true;
+            if (appState.viewMode === 'pc') return false;
+            return window.innerWidth < 768;
+        }
+
+        function setViewMode(mode) {
+            appState.viewMode = mode;
+            saveState();
+
+            const btnAuto = document.getElementById('btnViewAuto');
+            const btnPC = document.getElementById('btnViewPC');
+            const btnSP = document.getElementById('btnViewSP');
+
+            const activeClass = 'px-2 py-1 rounded transition text-white font-medium bg-white/30';
+            const inactiveClass = 'px-2 py-1 rounded transition text-white font-medium hover:bg-white/20';
+
+            btnAuto.className = mode === 'auto' ? activeClass : inactiveClass;
+            btnPC.className = mode === 'pc' ? activeClass : inactiveClass;
+            btnSP.className = mode === 'sp' ? activeClass : inactiveClass;
+
+            if (appState.activeMainTab === 'todo') renderTodoSection();
+            else if (appState.activeMainTab === 'schedule') renderScheduleSection();
+        }
+
+        function switchMainTab(tabKey) {
+            appState.activeMainTab = tabKey;
+            saveState();
+
+            ['todo', 'schedule', 'history', 'usage', 'settings'].forEach(k => {
+                const sec = document.getElementById(`sec-${k}`);
+                const navBtn = document.getElementById(`navTab-${k}`);
+                
+                if (k === tabKey) {
+                    sec.classList.remove('hidden');
+                    if (k === 'todo') {
+                        navBtn.className = 'main-nav-btn nav-active-todo flex-1 min-w-[90px] py-3 px-2 text-center border-b-2 font-medium text-sm sm:text-base flex items-center justify-center gap-2 transition-all border-lime-500 text-lime-600 bg-lime-50/50';
+                    } else if (k === 'schedule') {
+                        navBtn.className = 'main-nav-btn nav-active-schedule flex-1 min-w-[90px] py-3 px-2 text-center border-b-2 font-medium text-sm sm:text-base flex items-center justify-center gap-2 transition-all border-purple-500 text-purple-600 bg-purple-50/50';
+                    } else {
+                        navBtn.className = 'main-nav-btn nav-active-other flex-1 min-w-[90px] py-3 px-2 text-center border-b-2 font-medium text-sm sm:text-base flex items-center justify-center gap-2 transition-all border-orange-500 text-orange-600 bg-orange-50/50';
+                    }
+                } else {
+                    sec.classList.add('hidden');
+                    navBtn.className = 'main-nav-btn flex-1 min-w-[90px] py-3 px-2 text-center border-b-2 border-transparent font-medium text-sm sm:text-base text-gray-600 hover:text-gray-900 flex items-center justify-center gap-2 transition-all';
+                }
+            });
+
+            if (tabKey === 'todo') renderTodoSection();
+            if (tabKey === 'schedule') renderScheduleSection();
+            if (tabKey === 'history') renderHistorySection();
+            if (tabKey === 'settings') populateSettingsInputs();
+        }
+
+        /* TODO SECTION LOGIC */
+        function getActiveTodoList() {
+            return appState.todoLists.find(l => l.id === appState.activeTodoListId) || appState.todoLists[0];
+        }
+
+        function renderTodoSection() {
+            renderTodoTabs();
+            renderActiveTodoListContent();
+        }
+
+        function renderTodoTabs() {
+            const container = document.getElementById('todoTabsList');
+            container.innerHTML = '';
+
+            appState.todoLists.forEach((list, index) => {
+                const isActive = list.id === appState.activeTodoListId;
+                const tab = document.createElement('div');
+                
+                tab.draggable = true;
+                tab.setAttribute('ondragstart', `handleTabDragStart(event, 'todo', ${index})`);
+                tab.setAttribute('ondragover', `handleTabDragOver(event)`);
+                tab.setAttribute('ondrop', `handleTabDrop(event, 'todo', ${index})`);
+                tab.setAttribute('ondragend', `handleTabDragEnd(event)`);
+
+                tab.className = `tab-draggable flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border cursor-pointer select-none transition whitespace-nowrap ${
+                    isActive 
+                        ? 'bg-lime-500 text-white border-lime-600 shadow-sm' 
+                        : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-200'
+                }`;
+
+                tab.innerHTML = `
+                    <i class="fa-solid fa-grip-vertical text-xs opacity-50 mr-0.5"></i>
+                    <span onclick="selectOrEditTodoList('${list.id}')" title="クリックで選択 / リネーム" class="truncate max-w-[140px] font-bold">${escapeHtml(list.name)}</span>
+                    <button onclick="confirmDeleteList('${list.id}', event)" class="hover:text-red-300 text-xs p-0.5 rounded transition ml-1">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                `;
+
+                container.appendChild(tab);
+            });
+        }
+
+        function selectOrEditTodoList(id) {
+            if (appState.activeTodoListId === id) {
+                const nameInput = document.getElementById('todoListNameInput');
+                if (nameInput) {
+                    nameInput.focus();
+                    nameInput.select();
+                }
+            } else {
+                selectTodoList(id);
+            }
+        }
+
+        function selectTodoList(id) {
+            appState.activeTodoListId = id;
+            saveState();
+            renderTodoSection();
+        }
+
+        function addNewTodoList() {
+            const newName = generateNextTabName(appState.todoLists);
+            const newList = createNewTodoListObject(newName);
+            appState.todoLists.push(newList);
+            appState.activeTodoListId = newList.id;
+            saveState();
+            renderTodoSection();
+
+            setTimeout(() => {
+                const input = document.getElementById('todoListNameInput');
+                if (input) {
+                    input.focus();
+                    input.select();
+                }
+            }, 100);
+        }
+
+        function confirmDeleteList(id, event) {
+            event.stopPropagation();
+            if (appState.todoLists.length <= 1) {
+                showModal('操作不可', '最後のリストは削除できません。', null, false);
+                return;
+            }
+
+            const target = appState.todoLists.find(l => l.id === id);
+            showModal('リストの削除', `「${target ? target.name : 'このリスト'}」を削除してもよろしいですか？`, () => {
+                appState.todoLists = appState.todoLists.filter(l => l.id !== id);
+                if (appState.activeTodoListId === id) {
+                    appState.activeTodoListId = appState.todoLists[0].id;
+                }
+                saveState();
+                renderTodoSection();
+            });
+        }
+
+        function updateCurrentListName(val) {
+            const list = getActiveTodoList();
+            if (!list) return;
+            list.name = val.trim() || '無題のリスト';
+            saveState();
+            renderTodoTabs();
+        }
+
+        function changeTodoSort(val) {
+            const list = getActiveTodoList();
+            if (!list) return;
+            list.sortMode = val;
+            saveState();
+            renderActiveTodoListContent();
+        }
+
+        function renderActiveTodoListContent() {
+            const list = getActiveTodoList();
+            if (!list) return;
+
+            document.getElementById('todoListNameInput').value = list.name;
+            document.getElementById('todoSortSelect').value = list.sortMode || 'manual';
+
+            const container = document.getElementById('todoItemsContainer');
+            container.innerHTML = '';
+
+            let sortedItems = [...list.items];
+
+            if (list.sortMode === 'priority-asc') {
+                sortedItems.sort((a, b) => a.priority - b.priority);
+            } else if (list.sortMode === 'priority-desc') {
+                sortedItems.sort((a, b) => b.priority - a.priority);
+            } else if (list.sortMode === 'deadline-asc') {
+                sortedItems.sort((a, b) => getItemDeadlineTimestamp(a) - getItemDeadlineTimestamp(b));
+            } else if (list.sortMode === 'deadline-desc') {
+                sortedItems.sort((a, b) => getItemDeadlineTimestamp(b) - getItemDeadlineTimestamp(a));
+            }
+
+            sortedItems.forEach(item => {
+                const card = createTodoItemCard(item);
+                container.appendChild(card);
+            });
+        }
+
+        function getItemDeadlineTimestamp(item) {
+            if (item.deadlineType === 'datetime') {
+                return item.deadlineDatetime ? new Date(item.deadlineDatetime).getTime() : Infinity;
+            } else {
+                const num = Number(item.durationNum) || 1;
+                let multiplier = 3600000;
+                if (item.durationUnit === 'days') multiplier = 86400000;
+                if (item.durationUnit === 'weeks') multiplier = 604800000;
+                if (item.durationUnit === 'months') multiplier = 2592000000;
+                return (item.createdAt || Date.now()) + (num * multiplier);
+            }
+        }
+
+        function getItemStatus(item) {
+            if (item.completed) return 'COMPLETED';
+            const deadline = getItemDeadlineTimestamp(item);
+            if (deadline !== Infinity && Date.now() > deadline) {
+                return 'OVERDUE';
+            }
+            return 'PENDING';
+        }
+
+        function createTodoItemCard(item) {
+            const status = getItemStatus(item);
+            const card = document.createElement('div');
+            card.className = 'bg-gray-50 rounded-xl p-3 border border-gray-200 transition space-y-2';
+
+            let statusIconHtml = '';
+            if (status === 'COMPLETED') {
+                statusIconHtml = `<button onclick="toggleTodoComplete('${item.id}')" class="text-emerald-600 text-xl hover:scale-110 transition flex-shrink-0"><i class="fa-regular fa-square-check"></i></button>`;
+            } else if (status === 'OVERDUE') {
+                statusIconHtml = `<button onclick="toggleTodoComplete('${item.id}')" class="text-red-500 text-xl hover:scale-110 transition flex-shrink-0" title="期限切れ・未完了 (クリックで完了に切替)"><i class="fa-solid fa-rectangle-xmark"></i></button>`;
+            } else {
+                statusIconHtml = `<button onclick="toggleTodoComplete('${item.id}')" class="text-gray-400 hover:text-lime-500 text-xl hover:scale-110 transition flex-shrink-0"><i class="fa-regular fa-square"></i></button>`;
+            }
+
+            const isMobile = isEffectiveMobileView();
+
+            if (isMobile) {
+                card.innerHTML = `
+                    <div class="flex flex-col gap-2">
+                        <div class="flex items-center gap-2 w-full">
+                            ${statusIconHtml}
+                            <input type="text" value="${escapeHtml(item.text)}" onfocus="this.select()" onchange="updateItemText('${item.id}', this.value)" class="flex-1 min-w-0 bg-white text-gray-800 border border-gray-300 rounded px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-lime-400 font-medium ${item.completed ? 'line-through text-gray-400' : ''}">
+                            <button onclick="toggleExpandItem('${item.id}')" class="p-1.5 text-gray-600 hover:text-gray-900 text-xs bg-white rounded border border-gray-200 flex-shrink-0">
+                                <i class="fa-solid fa-chevron-${item.expanded ? 'up' : 'down'}"></i>
+                            </button>
+                            <button onclick="confirmDeleteItem('${item.id}')" class="p-1.5 text-gray-400 hover:text-red-500 text-xs transition bg-white rounded border border-gray-200 flex-shrink-0">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+
+                        <div class="flex flex-wrap items-center justify-between gap-2 pt-1.5 border-t border-gray-200/70 text-xs">
+                            <div class="flex items-center gap-1 bg-white px-2 py-1 rounded border border-gray-300">
+                                <span class="text-gray-500 font-medium">優先:</span>
+                                <input type="number" value="${item.priority}" onfocus="this.select()" onchange="updateItemPriority('${item.id}', this.value)" class="w-10 text-center font-bold text-gray-800 focus:outline-none bg-white">
+                            </div>
+
+                            <div class="flex items-center gap-1 bg-white p-1 rounded border border-gray-300">
+                                <select onchange="updateDeadlineType('${item.id}', this.value)" class="bg-white text-gray-800 focus:outline-none font-medium">
+                                    <option value="datetime" ${item.deadlineType === 'datetime' ? 'selected' : ''}>日時</option>
+                                    <option value="duration" ${item.deadlineType === 'duration' ? 'selected' : ''}>期間</option>
+                                </select>
+                                
+                                ${item.deadlineType === 'datetime' ? `
+                                    <input type="datetime-local" value="${item.deadlineDatetime || ''}" onfocus="this.select()" onchange="updateItemDatetime('${item.id}', this.value)" class="bg-white text-gray-800 text-xs focus:outline-none">
+                                ` : `
+                                    <input type="number" min="1" value="${item.durationNum}" onfocus="this.select()" onchange="updateItemDurationNum('${item.id}', this.value)" class="w-10 text-center text-gray-800 bg-white border-b border-gray-300">
+                                    <select onchange="updateItemDurationUnit('${item.id}', this.value)" class="bg-white text-gray-800 text-xs focus:outline-none">
+                                        <option value="hours" ${item.durationUnit === 'hours' ? 'selected' : ''}>時間で</option>
+                                        <option value="days" ${item.durationUnit === 'days' ? 'selected' : ''}>日間で</option>
+                                        <option value="weeks" ${item.durationUnit === 'weeks' ? 'selected' : ''}>週間で</option>
+                                        <option value="months" ${item.durationUnit === 'months' ? 'selected' : ''}>ヶ月間で</option>
+                                    </select>
+                                `}
+                            </div>
+                        </div>
+                    </div>
+
+                    ${item.expanded ? `
+                        <div class="pt-2 border-t border-gray-200">
+                            <textarea onfocus="this.select()" onchange="updateItemDetail('${item.id}', this.value)" placeholder="詳細を入力..." class="w-full text-xs p-2 bg-white text-gray-800 rounded border border-gray-300 focus:outline-none focus:ring-1 focus:ring-lime-400 h-16">${escapeHtml(item.detail || '')}</textarea>
+                        </div>
+                    ` : ''}
+                `;
+            } else {
+                card.innerHTML = `
+                    <div class="flex flex-wrap items-center gap-2">
+                        ${statusIconHtml}
+
+                        <div class="flex items-center gap-1 bg-white px-2 py-1 rounded border border-gray-300 text-xs">
+                            <span class="text-gray-500 font-medium">優先:</span>
+                            <input type="number" value="${item.priority}" onfocus="this.select()" onchange="updateItemPriority('${item.id}', this.value)" class="w-10 text-center font-bold text-gray-800 focus:outline-none bg-white">
+                        </div>
+
+                        <input type="text" value="${escapeHtml(item.text)}" onfocus="this.select()" onchange="updateItemText('${item.id}', this.value)" class="flex-1 min-w-[150px] bg-white text-gray-800 border border-gray-300 rounded px-2.5 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-lime-400 font-medium ${item.completed ? 'line-through text-gray-400' : ''}">
+
+                        <div class="flex items-center gap-1 bg-white p-1 rounded border border-gray-300 text-xs">
+                            <select onchange="updateDeadlineType('${item.id}', this.value)" class="bg-white text-gray-800 focus:outline-none font-medium">
+                                <option value="datetime" ${item.deadlineType === 'datetime' ? 'selected' : ''}>日時</option>
+                                <option value="duration" ${item.deadlineType === 'duration' ? 'selected' : ''}>期間</option>
+                            </select>
+                            
+                            ${item.deadlineType === 'datetime' ? `
+                                <input type="datetime-local" value="${item.deadlineDatetime || ''}" onfocus="this.select()" onchange="updateItemDatetime('${item.id}', this.value)" class="bg-white text-gray-800 text-xs focus:outline-none">
+                            ` : `
+                                <input type="number" min="1" value="${item.durationNum}" onfocus="this.select()" onchange="updateItemDurationNum('${item.id}', this.value)" class="w-10 text-center text-gray-800 bg-white border-b border-gray-300">
+                                <select onchange="updateItemDurationUnit('${item.id}', this.value)" class="bg-white text-gray-800 text-xs focus:outline-none">
+                                    <option value="hours" ${item.durationUnit === 'hours' ? 'selected' : ''}>時間で</option>
+                                    <option value="days" ${item.durationUnit === 'days' ? 'selected' : ''}>日間で</option>
+                                    <option value="weeks" ${item.durationUnit === 'weeks' ? 'selected' : ''}>週間で</option>
+                                    <option value="months" ${item.durationUnit === 'months' ? 'selected' : ''}>ヶ月間で</option>
+                                </select>
+                            `}
+                        </div>
+
+                        <button onclick="toggleExpandItem('${item.id}')" class="p-1 text-gray-600 hover:text-gray-900 text-xs">
+                            <i class="fa-solid fa-chevron-${item.expanded ? 'up' : 'down'}"></i>
+                        </button>
+
+                        <button onclick="confirmDeleteItem('${item.id}')" class="p-1 text-gray-400 hover:text-red-500 text-xs transition">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+
+                    ${item.expanded ? `
+                        <div class="pt-2 border-t border-gray-200">
+                            <textarea onfocus="this.select()" onchange="updateItemDetail('${item.id}', this.value)" placeholder="詳細を入力..." class="w-full text-xs p-2 bg-white text-gray-800 rounded border border-gray-300 focus:outline-none focus:ring-1 focus:ring-lime-400 h-16">${escapeHtml(item.detail || '')}</textarea>
+                        </div>
+                    ` : ''}
+                `;
+            }
+
+            return card;
+        }
+
+        function toggleTodoComplete(itemId) {
+            const list = getActiveTodoList();
+            const item = list?.items.find(i => i.id === itemId);
+            if (item) {
+                item.completed = !item.completed;
+                saveState();
+                renderActiveTodoListContent();
+            }
+        }
+
+        function updateItemPriority(itemId, val) {
+            const list = getActiveTodoList();
+            const item = list?.items.find(i => i.id === itemId);
+            if (item) {
+                item.priority = parseInt(val, 10) || 1;
+                saveState();
+                renderActiveTodoListContent();
+            }
+        }
+
+        function updateItemText(itemId, val) {
+            const list = getActiveTodoList();
+            const item = list?.items.find(i => i.id === itemId);
+            if (item) {
+                item.text = val;
+                saveState();
+            }
+        }
+
+        function updateDeadlineType(itemId, val) {
+            const list = getActiveTodoList();
+            const item = list?.items.find(i => i.id === itemId);
+            if (item) {
+                item.deadlineType = val;
+                saveState();
+                renderActiveTodoListContent();
+            }
+        }
+
+        function updateItemDatetime(itemId, val) {
+            const list = getActiveTodoList();
+            const item = list?.items.find(i => i.id === itemId);
+            if (item) {
+                item.deadlineDatetime = val;
+                saveState();
+            }
+        }
+
+        function updateItemDurationNum(itemId, val) {
+            const list = getActiveTodoList();
+            const item = list?.items.find(i => i.id === itemId);
+            if (item) {
+                item.durationNum = parseInt(val, 10) || 1;
+                saveState();
+            }
+        }
+
+        function updateItemDurationUnit(itemId, val) {
+            const list = getActiveTodoList();
+            const item = list?.items.find(i => i.id === itemId);
+            if (item) {
+                item.durationUnit = val;
+                saveState();
+            }
+        }
+
+        function toggleExpandItem(itemId) {
+            const list = getActiveTodoList();
+            const item = list?.items.find(i => i.id === itemId);
+            if (item) {
+                item.expanded = !item.expanded;
+                saveState();
+                renderActiveTodoListContent();
+            }
+        }
+
+        function updateItemDetail(itemId, val) {
+            const list = getActiveTodoList();
+            const item = list?.items.find(i => i.id === itemId);
+            if (item) {
+                item.detail = val;
+                saveState();
+            }
+        }
+
+        function addTodoItem() {
+            const list = getActiveTodoList();
+            if (!list) return;
+            const now = new Date();
+            const defaultDeadline = new Date(now.getTime() + 86400000).toISOString().slice(0, 16);
+            const newItemId = 'item_' + Date.now();
+            list.items.push({
+                id: newItemId,
+                priority: 1,
+                text: '新しいタスク',
+                detail: '',
+                completed: false,
+                deadlineType: 'datetime',
+                deadlineDatetime: defaultDeadline,
+                durationNum: 3,
+                durationUnit: 'days',
+                createdAt: Date.now(),
+                expanded: false
+            });
+            saveState();
+            renderActiveTodoListContent();
+        }
+
+        function confirmDeleteItem(itemId) {
+            showModal('タスクの削除', 'このタスクを削除しますか？', () => {
+                const list = getActiveTodoList();
+                if (!list) return;
+                list.items = list.items.filter(i => i.id !== itemId);
+                saveState();
+                renderActiveTodoListContent();
+            });
+        }
+
+        /* SCHEDULE SECTION LOGIC */
+        function getActiveSchedule() {
+            return appState.schedules.find(s => s.id === appState.activeScheduleId) || appState.schedules[0];
+        }
+
+        function renderScheduleSection() {
+            renderScheduleTabs();
+            renderActiveScheduleContent();
+        }
+
+        function renderScheduleTabs() {
+            const container = document.getElementById('scheduleTabsList');
+            container.innerHTML = '';
+
+            appState.schedules.forEach((sched, index) => {
+                const isActive = sched.id === appState.activeScheduleId;
+                const tab = document.createElement('div');
+                
+                tab.draggable = true;
+                tab.setAttribute('ondragstart', `handleTabDragStart(event, 'schedule', ${index})`);
+                tab.setAttribute('ondragover', `handleTabDragOver(event)`);
+                tab.setAttribute('ondrop', `handleTabDrop(event, 'schedule', ${index})`);
+                tab.setAttribute('ondragend', `handleTabDragEnd(event)`);
+
+                tab.className = `tab-draggable flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border cursor-pointer select-none transition whitespace-nowrap ${
+                    isActive 
+                        ? 'bg-purple-500 text-white border-purple-600 shadow-sm' 
+                        : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-200'
+                }`;
+
+                tab.innerHTML = `
+                    <i class="fa-solid fa-grip-vertical text-xs opacity-50 mr-0.5"></i>
+                    <span onclick="selectOrEditSchedule('${sched.id}')" title="クリックで選択 / リネーム" class="truncate max-w-[140px] font-bold">${escapeHtml(sched.name)}</span>
+                    <button onclick="confirmDeleteSchedule('${sched.id}', event)" class="hover:text-red-300 text-xs p-0.5 rounded transition ml-1">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                `;
+
+                container.appendChild(tab);
+            });
+        }
+
+        function selectOrEditSchedule(id) {
+            if (appState.activeScheduleId === id) {
+                const input = document.getElementById('schedNameInput');
+                if (input) {
+                    input.focus();
+                    input.select();
+                }
+            } else {
+                selectSchedule(id);
+            }
+        }
+
+        function selectSchedule(id) {
+            appState.activeScheduleId = id;
+            saveState();
+            renderScheduleSection();
+        }
+
+        function addNewSchedule() {
+            const newName = generateNextTabName(appState.schedules);
+            const newSched = createNewScheduleObject(newName);
+            appState.schedules.push(newSched);
+            appState.activeScheduleId = newSched.id;
+            saveState();
+            renderScheduleSection();
+
+            setTimeout(() => {
+                const input = document.getElementById('schedNameInput');
+                if (input) {
+                    input.focus();
+                    input.select();
+                }
+            }, 100);
+        }
+
+        function confirmDeleteSchedule(id, event) {
+            event.stopPropagation();
+            if (appState.schedules.length <= 1) {
+                showModal('操作不可', '最後のスケジュールは削除できません。', null, false);
+                return;
+            }
+
+            const target = appState.schedules.find(s => s.id === id);
+            showModal('スケジュールの削除', `「${target ? target.name : 'このスケジュール'}」を削除してもよろしいですか？`, () => {
+                appState.schedules = appState.schedules.filter(s => s.id !== id);
+                if (appState.activeScheduleId === id) {
+                    appState.activeScheduleId = appState.schedules[0].id;
+                }
+                saveState();
+                renderScheduleSection();
+            });
+        }
+
+        function updateCurrentSchedName(val) {
+            const sched = getActiveSchedule();
+            if (!sched) return;
+            sched.name = val.trim() || '無題のスケジュール';
+            saveState();
+            renderScheduleTabs();
+        }
+
+        function updateSchedDate() {
+            const sched = getActiveSchedule();
+            if (!sched) return;
+            sched.month = parseInt(document.getElementById('schedMonthInput').value, 10) || 1;
+            sched.day = parseInt(document.getElementById('schedDayInput').value, 10) || 1;
+            saveState();
+        }
+
+        function renderActiveScheduleContent() {
+            const sched = getActiveSchedule();
+            if (!sched) return;
+
+            document.getElementById('schedNameInput').value = sched.name;
+            document.getElementById('schedMonthInput').value = sched.month;
+            document.getElementById('schedDayInput').value = sched.day;
+
+            const container = document.getElementById('schedItemsContainer');
+            container.innerHTML = '';
+
+            const isMobile = isEffectiveMobileView();
+
+            sched.items.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'bg-gray-50 rounded-xl p-3 border border-gray-200 transition space-y-2';
+
+                if (isMobile) {
+                    card.innerHTML = `
+                        <div class="flex flex-col gap-2">
+                            <div class="flex items-center gap-2 w-full">
+                                <button onclick="toggleSchedComplete('${item.id}')" class="text-xl transition flex-shrink-0 ${item.completed ? 'text-emerald-600' : 'text-gray-400 hover:text-purple-500'}">
+                                    <i class="fa-regular fa-${item.completed ? 'square-check' : 'square'}"></i>
+                                </button>
+                                <input type="text" value="${escapeHtml(item.text)}" onfocus="this.select()" onchange="updateSchedText('${item.id}', this.value)" class="flex-1 min-w-0 bg-white text-gray-800 border border-gray-300 rounded px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-purple-400 font-medium ${item.completed ? 'line-through text-gray-400' : ''}">
+                                <button onclick="toggleExpandSchedItem('${item.id}')" class="p-1.5 text-gray-600 hover:text-gray-900 text-xs bg-white rounded border border-gray-200 flex-shrink-0">
+                                    <i class="fa-solid fa-chevron-${item.expanded ? 'up' : 'down'}"></i>
+                                </button>
+                                <button onclick="confirmDeleteSchedItem('${item.id}')" class="p-1.5 text-gray-400 hover:text-red-500 text-xs transition bg-white rounded border border-gray-200 flex-shrink-0">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
+
+                            <div class="flex items-center gap-2 pt-1.5 border-t border-gray-200/70 text-xs">
+                                <span class="text-gray-500 font-medium">時間:</span>
+                                <div class="flex items-center gap-1 bg-white px-2 py-1 rounded border border-gray-300 font-medium">
+                                    <input type="time" value="${item.startTime || '10:00'}" onfocus="this.select()" onchange="updateSchedStartTime('${item.id}', this.value)" class="bg-white text-gray-800 text-xs focus:outline-none">
+                                    <span>〜</span>
+                                    <input type="time" value="${item.endTime || '12:00'}" onfocus="this.select()" onchange="updateSchedEndTime('${item.id}', this.value)" class="bg-white text-gray-800 text-xs focus:outline-none">
+                                </div>
+                            </div>
+                        </div>
+
+                        ${item.expanded ? `
+                            <div class="pt-2 border-t border-gray-200">
+                                <textarea onfocus="this.select()" onchange="updateSchedDetail('${item.id}', this.value)" placeholder="詳細を入力..." class="w-full text-xs p-2 bg-white text-gray-800 rounded border border-gray-300 focus:outline-none focus:ring-1 focus:ring-purple-400 h-16">${escapeHtml(item.detail || '')}</textarea>
+                            </div>
+                        ` : ''}
+                    `;
+                } else {
+                    card.innerHTML = `
+                        <div class="flex flex-wrap items-center gap-2">
+                            <button onclick="toggleSchedComplete('${item.id}')" class="text-xl transition ${item.completed ? 'text-emerald-600' : 'text-gray-400 hover:text-purple-500'}">
+                                <i class="fa-regular fa-${item.completed ? 'square-check' : 'square'}"></i>
+                            </button>
+
+                            <div class="flex items-center gap-1 bg-white px-2 py-1 rounded border border-gray-300 text-xs font-medium">
+                                <input type="time" value="${item.startTime || '10:00'}" onfocus="this.select()" onchange="updateSchedStartTime('${item.id}', this.value)" class="bg-white text-gray-800 text-xs focus:outline-none">
+                                <span>〜</span>
+                                <input type="time" value="${item.endTime || '12:00'}" onfocus="this.select()" onchange="updateSchedEndTime('${item.id}', this.value)" class="bg-white text-gray-800 text-xs focus:outline-none">
+                            </div>
+
+                            <input type="text" value="${escapeHtml(item.text)}" onfocus="this.select()" onchange="updateSchedText('${item.id}', this.value)" class="flex-1 min-w-[150px] bg-white text-gray-800 border border-gray-300 rounded px-2.5 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-purple-400 font-medium ${item.completed ? 'line-through text-gray-400' : ''}">
+
+                            <button onclick="toggleExpandSchedItem('${item.id}')" class="p-1 text-gray-600 hover:text-gray-900 text-xs">
+                                <i class="fa-solid fa-chevron-${item.expanded ? 'up' : 'down'}"></i>
+                            </button>
+
+                            <button onclick="confirmDeleteSchedItem('${item.id}')" class="p-1 text-gray-400 hover:text-red-500 text-xs transition">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+
+                        ${item.expanded ? `
+                            <div class="pt-2 border-t border-gray-200">
+                                <textarea onfocus="this.select()" onchange="updateSchedDetail('${item.id}', this.value)" placeholder="詳細を入力..." class="w-full text-xs p-2 bg-white text-gray-800 rounded border border-gray-300 focus:outline-none focus:ring-1 focus:ring-purple-400 h-16">${escapeHtml(item.detail || '')}</textarea>
+                            </div>
+                        ` : ''}
+                    `;
+                }
+
+                container.appendChild(card);
+            });
+        }
+
+        function toggleSchedComplete(itemId) {
+            const sched = getActiveSchedule();
+            const item = sched?.items.find(i => i.id === itemId);
+            if (item) {
+                item.completed = !item.completed;
+                saveState();
+                renderActiveScheduleContent();
+            }
+        }
+
+        function updateSchedStartTime(itemId, val) {
+            const sched = getActiveSchedule();
+            const item = sched?.items.find(i => i.id === itemId);
+            if (item) {
+                item.startTime = val;
+                saveState();
+            }
+        }
+
+        function updateSchedEndTime(itemId, val) {
+            const sched = getActiveSchedule();
+            const item = sched?.items.find(i => i.id === itemId);
+            if (item) {
+                item.endTime = val;
+                saveState();
+            }
+        }
+
+        function updateSchedText(itemId, val) {
+            const sched = getActiveSchedule();
+            const item = sched?.items.find(i => i.id === itemId);
+            if (item) {
+                item.text = val;
+                saveState();
+            }
+        }
+
+        function toggleExpandSchedItem(itemId) {
+            const sched = getActiveSchedule();
+            const item = sched?.items.find(i => i.id === itemId);
+            if (item) {
+                item.expanded = !item.expanded;
+                saveState();
+                renderActiveScheduleContent();
+            }
+        }
+
+        function updateSchedDetail(itemId, val) {
+            const sched = getActiveSchedule();
+            const item = sched?.items.find(i => i.id === itemId);
+            if (item) {
+                item.detail = val;
+                saveState();
+            }
+        }
+
+        function addScheduleItem() {
+            const sched = getActiveSchedule();
+            if (!sched) return;
+            sched.items.push({
+                id: 'sitem_' + Date.now(),
+                text: '新しい予定',
+                detail: '',
+                startTime: '13:00',
+                endTime: '14:00',
+                completed: false,
+                expanded: false
+            });
+            saveState();
+            renderActiveScheduleContent();
+        }
+
+        function confirmDeleteSchedItem(itemId) {
+            showModal('予定の削除', 'この予定を削除しますか？', () => {
+                const sched = getActiveSchedule();
+                if (!sched) return;
+                sched.items = sched.items.filter(i => i.id !== itemId);
+                saveState();
+                renderActiveScheduleContent();
+            });
+        }
+
+        /* HISTORY LOGIC (WITH TASK COMPLETION & DETAIL VIEW) */
+        function saveCurrentToHistory(type) {
+            const nowStr = new Date().toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+            
+            if (type === 'todo') {
+                const list = getActiveTodoList();
+                if (!list) return;
+                const snapshot = JSON.parse(JSON.stringify(list));
+                appState.history.todo.unshift({
+                    id: 'hist_t_' + Date.now(),
+                    savedAt: nowStr,
+                    data: snapshot
+                });
+            } else {
+                const sched = getActiveSchedule();
+                if (!sched) return;
+                const snapshot = JSON.parse(JSON.stringify(sched));
+                appState.history.schedule.unshift({
+                    id: 'hist_s_' + Date.now(),
+                    savedAt: nowStr,
+                    data: snapshot
+                });
+            }
+
+            saveState();
+            showModal('履歴保存完了', '現在の内容を履歴に保存しました。', null, false);
+        }
+
+        function switchHistorySubTab(subKey) {
+            appState.historySubTab = subKey;
+            const btnTodo = document.getElementById('histSubTab-todo');
+            const btnSched = document.getElementById('histSubTab-schedule');
+
+            if (subKey === 'todo') {
+                btnTodo.className = 'px-4 py-2 rounded-lg font-medium text-sm transition bg-lime-500 text-white shadow-sm';
+                btnSched.className = 'px-4 py-2 rounded-lg font-medium text-sm transition bg-gray-100 text-gray-700 hover:bg-gray-200';
+            } else {
+                btnSched.className = 'px-4 py-2 rounded-lg font-medium text-sm transition bg-purple-500 text-white shadow-sm';
+                btnTodo.className = 'px-4 py-2 rounded-lg font-medium text-sm transition bg-gray-100 text-gray-700 hover:bg-gray-200';
+            }
+
+            renderHistorySection();
+        }
+
+        function toggleHistoryItemComplete(recordId, itemId) {
+            const isTodo = appState.historySubTab === 'todo';
+            const list = isTodo ? appState.history.todo : appState.history.schedule;
+            const record = list.find(r => r.id === recordId);
+            if (!record) return;
+
+            const item = record.data.items.find(i => i.id === itemId);
+            if (item) {
+                item.completed = !item.completed;
+                saveState();
+                renderHistorySection();
+            }
+        }
+
+        function renderHistorySection() {
+            const container = document.getElementById('historyItemsList');
+            container.innerHTML = '';
+
+            const isTodo = appState.historySubTab === 'todo';
+            const items = isTodo ? appState.history.todo : appState.history.schedule;
+
+            if (items.length === 0) {
+                container.innerHTML = `<p class="text-center text-gray-400 py-8 text-sm">保存された履歴はありません。</p>`;
+                return;
+            }
+
+            items.forEach(record => {
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-xl shadow-sm border border-gray-200 p-4 space-y-3';
+
+                const data = record.data;
+                const completedCount = data.items.filter(i => i.completed).length;
+
+                let itemsListHtml = '';
+
+                if (isTodo) {
+                    itemsListHtml = data.items.map(item => `
+                        <div class="flex flex-col bg-gray-50/80 p-2 rounded-lg border border-gray-200/60 text-xs">
+                            <div class="flex items-center gap-2">
+                                <button onclick="toggleHistoryItemComplete('${record.id}', '${item.id}')" class="text-lg transition ${item.completed ? 'text-emerald-600' : 'text-gray-400 hover:text-lime-500'}">
+                                    <i class="fa-regular fa-${item.completed ? 'square-check' : 'square'}"></i>
+                                </button>
+                                <span class="font-medium flex-1 ${item.completed ? 'line-through text-gray-400' : 'text-gray-800'}">${escapeHtml(item.text)}</span>
+                                <span class="text-[10px] px-1.5 py-0.5 rounded bg-white border text-gray-500">優先度: ${item.priority || 1}</span>
+                            </div>
+                            ${item.detail ? `<p class="mt-1 pl-7 text-[11px] text-gray-500 whitespace-pre-wrap">${escapeHtml(item.detail)}</p>` : ''}
+                        </div>
+                    `).join('');
+                } else {
+                    itemsListHtml = data.items.map(item => `
+                        <div class="flex flex-col bg-gray-50/80 p-2 rounded-lg border border-gray-200/60 text-xs">
+                            <div class="flex items-center gap-2">
+                                <button onclick="toggleHistoryItemComplete('${record.id}', '${item.id}')" class="text-lg transition ${item.completed ? 'text-emerald-600' : 'text-gray-400 hover:text-purple-500'}">
+                                    <i class="fa-regular fa-${item.completed ? 'square-check' : 'square'}"></i>
+                                </button>
+                                <span class="font-bold text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-100">${item.startTime || '00:00'} 〜 ${item.endTime || '00:00'}</span>
+                                <span class="font-medium flex-1 ${item.completed ? 'line-through text-gray-400' : 'text-gray-800'}">${escapeHtml(item.text)}</span>
+                            </div>
+                            ${item.detail ? `<p class="mt-1 pl-7 text-[11px] text-gray-500 whitespace-pre-wrap">${escapeHtml(item.detail)}</p>` : ''}
+                        </div>
+                    `).join('');
+                }
+
+                card.innerHTML = `
+                    <div class="flex flex-wrap justify-between items-center gap-2 border-b border-gray-100 pb-3">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h3 class="font-bold text-gray-800 text-base">${escapeHtml(data.name)}</h3>
+                                <span class="text-xs px-2 py-0.5 rounded-full font-medium ${isTodo ? 'bg-lime-100 text-lime-700' : 'bg-purple-100 text-purple-700'}">
+                                    完了: ${completedCount} / ${data.items.length}
+                                </span>
+                            </div>
+                            <p class="text-xs text-gray-400 mt-0.5">保存日時: ${record.savedAt}</p>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <button onclick="loadHistoryToEdit('${record.id}')" class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs font-medium transition flex items-center gap-1">
+                                <i class="fa-solid fa-pen-to-square"></i> 編集に読み込む
+                            </button>
+                            <button onclick="exportHistoryImage('${record.id}')" class="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-medium transition flex items-center gap-1">
+                                <i class="fa-solid fa-image"></i> 画像出力
+                            </button>
+                            <button onclick="confirmDeleteHistorySingle('${record.id}')" class="px-2.5 py-1.5 text-red-500 hover:bg-red-50 rounded-lg text-xs transition">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2 pt-1">
+                        <div class="flex justify-between items-center text-xs text-gray-500 font-medium">
+                            <span><i class="fa-solid fa-list-check text-gray-400 mr-1"></i> 登録項目・詳細 (チェックボックスで完了を切り替え可能)</span>
+                        </div>
+                        <div class="grid grid-cols-1 gap-1.5 max-h-60 overflow-y-auto custom-scrollbar pr-1">
+                            ${itemsListHtml}
+                        </div>
+                    </div>
+                `;
+
+                container.appendChild(card);
+            });
+        }
+
+        function loadHistoryToEdit(recordId) {
+            const isTodo = appState.historySubTab === 'todo';
+            const record = (isTodo ? appState.history.todo : appState.history.schedule).find(r => r.id === recordId);
+            if (!record) return;
+
+            const copyData = JSON.parse(JSON.stringify(record.data));
+            copyData.id = (isTodo ? 'list_' : 'sched_') + Date.now();
+
+            if (isTodo) {
+                appState.todoLists.push(copyData);
+                appState.activeTodoListId = copyData.id;
+                switchMainTab('todo');
+            } else {
+                appState.schedules.push(copyData);
+                appState.activeScheduleId = copyData.id;
+                switchMainTab('schedule');
+            }
+            saveState();
+        }
+
+        function confirmDeleteHistorySingle(recordId) {
+            showModal('履歴の削除', 'この履歴を削除してもよろしいですか？', () => {
+                if (appState.historySubTab === 'todo') {
+                    appState.history.todo = appState.history.todo.filter(r => r.id !== recordId);
+                } else {
+                    appState.history.schedule = appState.history.schedule.filter(r => r.id !== recordId);
+                }
+                saveState();
+                renderHistorySection();
+            });
+        }
+
+        function confirmClearAllHistory() {
+            showModal('全履歴の削除', '現在選択中の全ての履歴を削除しますか？', () => {
+                if (appState.historySubTab === 'todo') {
+                    appState.history.todo = [];
+                } else {
+                    appState.history.schedule = [];
+                }
+                saveState();
+                renderHistorySection();
+            });
+        }
+
+        function exportHistoryImage(recordId) {
+            const isTodo = appState.historySubTab === 'todo';
+            const record = (isTodo ? appState.history.todo : appState.history.schedule).find(r => r.id === recordId);
+            if (!record) return;
+
+            const container = document.getElementById('imageExportContainer');
+            const data = record.data;
+
+            let itemsHtml = '';
+            if (isTodo) {
+                itemsHtml = data.items.map(i => `
+                    <div style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; background: #f9fafb; border-radius: 8px; margin-bottom: 6px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="color: ${i.completed ? '#10b981' : '#9ca3af'}; font-size: 16px;">${i.completed ? '☑' : '☐'}</span>
+                            <span style="font-weight: bold; font-size: 14px; text-decoration: ${i.completed ? 'line-through' : 'none'}; color: ${i.completed ? '#9ca3af' : '#1f2937'};">${escapeHtml(i.text)}</span>
+                        </div>
+                        ${i.detail ? `<div style="font-size: 12px; color: #6b7280; margin-left: 24px; margin-top: 4px; white-space: pre-wrap;">${escapeHtml(i.detail)}</div>` : ''}
+                    </div>
+                `).join('');
+            } else {
+                itemsHtml = data.items.map(i => `
+                    <div style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; background: #f9fafb; border-radius: 8px; margin-bottom: 6px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="color: ${i.completed ? '#10b981' : '#9ca3af'}; font-size: 16px;">${i.completed ? '☑' : '☐'}</span>
+                            <span style="font-size: 12px; font-weight: bold; color: #7c3aed; background: #f3e8ff; padding: 2px 6px; border-radius: 4px;">${i.startTime || '00:00'} 〜 ${i.endTime || '00:00'}</span>
+                            <span style="font-weight: bold; font-size: 14px; text-decoration: ${i.completed ? 'line-through' : 'none'}; color: ${i.completed ? '#9ca3af' : '#1f2937'};">${escapeHtml(i.text)}</span>
+                        </div>
+                        ${i.detail ? `<div style="font-size: 12px; color: #6b7280; margin-left: 24px; margin-top: 4px; white-space: pre-wrap;">${escapeHtml(i.detail)}</div>` : ''}
+                    </div>
+                `).join('');
+            }
+
+            container.innerHTML = `
+                <div style="padding: 24px; background: #ffffff; color: #1f2937; font-family: sans-serif; border-radius: 16px;">
+                    <div style="border-bottom: 2px solid #e5e7eb; padding-bottom: 12px; margin-bottom: 16px;">
+                        <h2 style="font-size: 20px; font-weight: bold; margin: 0; color: #111827;">${escapeHtml(data.name)}</h2>
+                        <p style="font-size: 12px; color: #6b7280; margin: 4px 0 0 0;">保存日時: ${record.savedAt}</p>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        ${itemsHtml}
+                    </div>
+                </div>
+            `;
+
+            html2canvas(container).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `${data.name}_${record.savedAt.replace(/[\/\s:]/g, '_')}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+        }
+
+        /* SETTINGS LOGIC */
+        function populateSettingsInputs() {
+            const st = appState.settings;
+            document.getElementById('cfgFont').value = st.font || 'font-sans-jp';
+
+            const themeRadios = document.getElementsByName('cfgTheme');
+            themeRadios.forEach(r => {
+                if (r.value === (st.theme || 'light')) r.checked = true;
+            });
+
+            document.getElementById('cfgBgColor').value = st.bgColor || '#f3f4f6';
+            document.getElementById('cfgTextColor').value = st.textColor || '#1f2937';
+            document.getElementById('cfgBorderColor').value = st.borderColor || '#e5e7eb';
+            document.getElementById('cfgBtnColor').value = st.btnColor || '#f97316';
+            document.getElementById('cfgTabColor').value = st.tabColor || '#ffffff';
+
+            updateRecropButtonsVisibility();
+        }
+
+        function previewSettings() {
+            const tempSettings = {
+                font: document.getElementById('cfgFont').value,
+                theme: Array.from(document.getElementsByName('cfgTheme')).find(r => r.checked)?.value || 'light',
+                bgColor: document.getElementById('cfgBgColor').value,
+                textColor: document.getElementById('cfgTextColor').value,
+                borderColor: document.getElementById('cfgBorderColor').value,
+                btnColor: document.getElementById('cfgBtnColor').value,
+                tabColor: document.getElementById('cfgTabColor').value,
+                bgImg: appState.settings.bgImg,
+                headerImg: appState.settings.headerImg,
+                rawBgImg: appState.settings.rawBgImg,
+                rawHeaderImg: appState.settings.rawHeaderImg
+            };
+
+            applySettingsToDOM(tempSettings);
+            showModal('プレビュー表示中', '設定のプレビューを適用しました。「設定を反映する」を押すと保存されます。', null, false);
+        }
+
+        function applyAndSaveSettings() {
+            appState.settings.font = document.getElementById('cfgFont').value;
+            appState.settings.theme = Array.from(document.getElementsByName('cfgTheme')).find(r => r.checked)?.value || 'light';
+            appState.settings.bgColor = document.getElementById('cfgBgColor').value;
+            appState.settings.textColor = document.getElementById('cfgTextColor').value;
+            appState.settings.borderColor = document.getElementById('cfgBorderColor').value;
+            appState.settings.btnColor = document.getElementById('cfgBtnColor').value;
+            appState.settings.tabColor = document.getElementById('cfgTabColor').value;
+
+            saveState();
+            applyVisualStyles();
+            showModal('設定完了', 'デザイン設定を保存・適用しました。', null, false);
+        }
+
+        function applyVisualStyles() {
+            applySettingsToDOM(appState.settings);
+        }
+
+        function applySettingsToDOM(st) {
+            const body = document.body;
+
+            body.classList.remove('font-sans-jp', 'font-serif-jp', 'font-maru', 'font-mono');
+            body.classList.add(st.font || 'font-sans-jp');
+
+            if (st.theme === 'dark') {
+                body.classList.add('theme-dark');
+            } else {
+                body.classList.remove('theme-dark');
+            }
+
+            if (st.bgImg) {
+                body.style.backgroundImage = `url("${st.bgImg}")`;
+                body.style.backgroundSize = 'cover';
+                body.style.backgroundPosition = 'center';
+                body.style.backgroundAttachment = 'fixed';
+            } else {
+                body.style.backgroundImage = 'none';
+                body.style.backgroundColor = st.bgColor || '#f3f4f6';
+            }
+
+            const headerBg = document.getElementById('headerBgContainer');
+            if (headerBg) {
+                if (st.headerImg) {
+                    headerBg.style.backgroundImage = `url("${st.headerImg}")`;
+                } else {
+                    headerBg.style.backgroundImage = `url("https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?auto=format&fit=crop&w=1200&q=80")`;
+                }
+            }
+
+            const root = document.documentElement;
+            root.style.setProperty('--custom-border-color', st.borderColor);
+            root.style.setProperty('--custom-btn-color', st.btnColor);
+            root.style.setProperty('--custom-tab-color', st.tabColor);
+        }
+
+        function clearHeaderImg() {
+            appState.settings.headerImg = '';
+            appState.settings.rawHeaderImg = '';
+            saveState();
+            applyVisualStyles();
+            updateRecropButtonsVisibility();
+            showModal('通知', 'ヘッダー画像をデフォルトに戻しました。', null, false);
+        }
+
+        function clearBgImg() {
+            appState.settings.bgImg = '';
+            appState.settings.rawBgImg = '';
+            saveState();
+            applyVisualStyles();
+            updateRecropButtonsVisibility();
+            showModal('通知', '背景画像を削除しました。', null, false);
+        }
+
+        function setupImageUploadListeners() {
+            const headerInput = document.getElementById('cfgHeaderImgFile');
+            if (headerInput) {
+                headerInput.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = function(evt) {
+                        openCropModal(evt.target.result, 'header');
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            const bgInput = document.getElementById('cfgBgImgFile');
+            if (bgInput) {
+                bgInput.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = function(evt) {
+                        openCropModal(evt.target.result, 'bg');
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+        }
+
+        /* MODAL UTILITY */
+        let modalConfirmCallback = null;
+
+        function showModal(title, message, onConfirm = null, showCancel = true) {
+            const modal = document.getElementById('customModal');
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalMessage').textContent = message;
+
+            const cancelBtn = document.getElementById('modalCancelBtn');
+            const confirmBtn = document.getElementById('modalConfirmBtn');
+
+            if (showCancel) {
+                cancelBtn.classList.remove('hidden');
+            } else {
+                cancelBtn.classList.add('hidden');
+            }
+
+            modalConfirmCallback = onConfirm;
+            modal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('customModal').classList.add('hidden');
+            modalConfirmCallback = null;
+        }
+
+        document.getElementById('modalCancelBtn').addEventListener('click', closeModal);
+        document.getElementById('modalConfirmBtn').addEventListener('click', () => {
+            if (modalConfirmCallback) modalConfirmCallback();
+            closeModal();
+        });
+
+        /* APP INITIALIZATION */
+        window.addEventListener('DOMContentLoaded', () => {
+            initData();
+            applyVisualStyles();
+            setupImageUploadListeners();
+            setViewMode(appState.viewMode || 'auto');
+            switchMainTab(appState.activeMainTab || 'todo');
+        });
+    </script>
+</body>
+</html>
